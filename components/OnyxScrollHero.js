@@ -33,6 +33,8 @@ export class OnyxScrollHero {
     this.abortController = new AbortController();
     this.context = null;
     this.timeline = null;
+    this.seekTarget = 0;
+    this.seekRaf = 0;
     this.metadataReady = false;
     this.isDestroyed = false;
     this.loadTimeout = 0;
@@ -116,6 +118,9 @@ export class OnyxScrollHero {
 
   rebuild() {
     if (!this.metadataReady || this.isDestroyed) return;
+    window.cancelAnimationFrame(this.seekRaf);
+    this.seekRaf = 0;
+    this.seekTarget = this.video.currentTime;
     this.context?.revert();
     this.context = null;
     this.timeline = null;
@@ -156,9 +161,8 @@ export class OnyxScrollHero {
           trigger: this.root,
           start: 'top top',
           end: 'bottom bottom',
-          // A short catch-up window removes the stepped feel of wheel/touch input
-          // while keeping the film tightly tied to the user's scroll position.
-          scrub: 0.45,
+          // Blend discrete wheel/trackpad events into a continuous playhead.
+          scrub: 0.28,
           invalidateOnRefresh: true,
           onUpdate: (self) => {
             this.root.style.setProperty('--cinematic-progress', self.progress.toFixed(4));
@@ -208,16 +212,33 @@ export class OnyxScrollHero {
 
   seek(time) {
     if (!this.metadataReady || this.video.readyState < HTMLMediaElement.HAVE_METADATA) return;
-    if (Math.abs(this.video.currentTime - time) < 0.015) return;
+    this.seekTarget = time;
+    if (!this.seekRaf) this.seekRaf = window.requestAnimationFrame(() => this.flushSeek());
+  }
+
+  flushSeek() {
+    this.seekRaf = 0;
+    if (this.isDestroyed || !this.metadataReady) return;
+
+    // Replacing an in-flight seek every tick starves the decoder and causes stutter.
+    if (this.video.seeking) {
+      this.seekRaf = window.requestAnimationFrame(() => this.flushSeek());
+      return;
+    }
+
+    if (Math.abs(this.video.currentTime - this.seekTarget) < 1 / 120) return;
     try {
       this.video.pause();
-      this.video.currentTime = time;
+      this.video.currentTime = this.seekTarget;
+      this.seekRaf = window.requestAnimationFrame(() => this.flushSeek());
     } catch {
       this.activateFallback('Video bu cihazda kaydırılamadı');
     }
   }
 
   applyReducedMotion() {
+    window.cancelAnimationFrame(this.seekRaf);
+    this.seekRaf = 0;
     this.root.classList.add('is-reduced');
     this.video.pause();
     try { this.video.currentTime = 0; } catch {}
@@ -232,6 +253,8 @@ export class OnyxScrollHero {
   activateFallback(message) {
     if (this.isDestroyed) return;
     window.clearTimeout(this.loadTimeout);
+    window.cancelAnimationFrame(this.seekRaf);
+    this.seekRaf = 0;
     this.context?.revert();
     this.context = null;
     this.timeline = null;
@@ -260,6 +283,8 @@ export class OnyxScrollHero {
     if (this.isDestroyed) return;
     this.isDestroyed = true;
     window.clearTimeout(this.loadTimeout);
+    window.cancelAnimationFrame(this.seekRaf);
+    this.seekRaf = 0;
     this.abortController.abort();
     this.resizeRefresh.kill();
     this.context?.revert();
