@@ -156,7 +156,9 @@ export class OnyxScrollHero {
           trigger: this.root,
           start: 'top top',
           end: 'bottom bottom',
-          scrub: true,
+          // A short catch-up window removes the stepped feel of wheel/touch input
+          // while keeping the film tightly tied to the user's scroll position.
+          scrub: 0.45,
           invalidateOnRefresh: true,
           onUpdate: (self) => {
             this.root.style.setProperty('--cinematic-progress', self.progress.toFixed(4));
