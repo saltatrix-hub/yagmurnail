@@ -1,0 +1,12 @@
+node_modules/
+.next/
+.vinext/
+dist/
+.wrangler/
+.env*
+public/site.html
+public/app.js
+public/styles.css
+public/*.png
+public/videos/
+*.log
