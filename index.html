@@ -59,24 +59,23 @@
   </div>
 
   <main>
-    <section class="cinematic-scroll" id="cinematicHero" aria-labelledby="cinematicTitle">
+    <section class="cinematic-scroll" id="cinematicHero" aria-labelledby="cinematicTitle" data-scroll-hero>
       <div class="cinematic-sticky">
-        <video class="cinematic-video" id="cinematicVideo" muted playsinline preload="metadata" poster="1.png" aria-label="Onyx Nail Studio sinematik tanıtım videosu">
-          <source src="videos/onyx-scroll.mp4" type="video/mp4" />
-        </video>
+        <video class="cinematic-video" id="cinematicVideo" data-cinematic-video data-desktop-src="/videos/onyx-scroll.mp4" data-mobile-src="/videos/onyx-scroll-mobile.mp4" muted playsinline preload="metadata" poster="/1.png" aria-label="Onyx Nail Studio sinematik tanıtım videosu"></video>
         <div class="cinematic-shade" aria-hidden="true"></div>
         <div class="cinematic-vignette" aria-hidden="true"></div>
-        <div class="cinematic-loading" id="cinematicLoading"><span class="loading-mark">ON</span><span class="loading-line"></span><span>Hazırlanıyor</span></div>
+        <div class="cinematic-handoff" data-cinematic-handoff aria-hidden="true"></div>
+        <div class="cinematic-loading" id="cinematicLoading" data-cinematic-loading role="status" aria-live="polite"><span class="loading-mark">ON</span><span class="loading-line"></span><span data-loading-status>Hazırlanıyor</span></div>
         <div class="cinematic-copy">
-          <p class="cinematic-brand" data-cinematic-brand>ONYX Nail Studio</p>
-          <h1 id="cinematicTitle" class="cinematic-message cinematic-detail">Detaylarda kusursuzluk.</h1>
-          <p class="cinematic-message cinematic-signature">Senin stilin. Senin imzan.</p>
-          <div class="cinematic-final">
+          <h1 id="cinematicTitle" class="cinematic-brand" data-cinematic-brand data-cinematic-copy>ONYX Nail Studio</h1>
+          <p class="cinematic-message cinematic-detail" data-cinematic-detail data-cinematic-copy>Detaylarda kusursuzluk.</p>
+          <p class="cinematic-message cinematic-signature" data-cinematic-signature data-cinematic-copy>Senin stilin. Senin imzan.</p>
+          <div class="cinematic-final" data-cinematic-final data-cinematic-copy>
             <span>ONYX Nail Studio</span>
-            <a class="cinematic-cta" href="#booking">Randevu Al <span>↗</span></a>
+            <a class="cinematic-cta" href="#booking" data-cinematic-cta>Randevu Al <span>↗</span></a>
           </div>
         </div>
-        <div class="cinematic-scroll-hint" aria-hidden="true"><span>SCROLL TO EXPLORE</span><i></i></div>
+        <div class="cinematic-scroll-hint" data-cinematic-hint aria-hidden="true"><span>SCROLL TO EXPLORE</span><i></i></div>
       </div>
     </section>
 
@@ -258,6 +257,7 @@
     </div>
   </div>
 
+  <script src="cinematic-hero.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

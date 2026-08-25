@@ -1,4 +1,5 @@
 import { cp, mkdir } from 'node:fs/promises';
+import { build } from 'vite';
 
 await mkdir('public/videos', { recursive: true });
 await Promise.all([
@@ -10,5 +11,22 @@ await Promise.all([
   cp('3.png', 'public/3.png'),
   cp('4.png', 'public/4.png'),
   cp('og.png', 'public/og.png'),
-  cp('videos/onyx-scroll.mp4', 'public/videos/onyx-scroll.mp4'),
 ]);
+
+await build({
+  configFile: false,
+  publicDir: false,
+  logLevel: 'warn',
+  build: {
+    emptyOutDir: false,
+    outDir: 'public',
+    minify: 'esbuild',
+    sourcemap: false,
+    lib: {
+      entry: 'components/OnyxScrollHero.js',
+      name: 'OnyxCinematic',
+      formats: ['iife'],
+      fileName: () => 'cinematic-hero.js',
+    },
+  },
+});

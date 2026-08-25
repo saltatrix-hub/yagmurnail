@@ -6,7 +6,8 @@ dist/
 .env*
 public/site.html
 public/app.js
+public/cinematic-hero.js
 public/styles.css
 public/*.png
-public/videos/
 *.log
+*.tsbuildinfo
