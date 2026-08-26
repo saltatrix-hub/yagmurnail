@@ -21,7 +21,7 @@
   <link rel="canonical" href="https://onyx-nail-studio.saltatrix.chatgpt.site/" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preload" as="image" href="/frames/onyx-v2/frame-0001.webp" fetchpriority="high" />
+  <link rel="preload" as="video" href="/videos/2.mp4" type="video/mp4" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Italiana&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -60,24 +60,22 @@
   </div>
 
   <main>
-    <section class="cinematic-scroll" id="cinematicHero" aria-labelledby="cinematicTitle" data-scroll-hero>
+    <section class="cinematic-scroll cinematic-video-hero" id="cinematicHero" aria-labelledby="cinematicTitle">
       <div class="cinematic-sticky">
-        <img class="cinematic-fallback-frame" src="/frames/onyx-v2/frame-0001.webp" alt="" aria-hidden="true" />
-        <canvas class="cinematic-canvas" id="cinematicCanvas" data-cinematic-canvas data-frame-count="240" data-frame-path="/frames/onyx-v2/frame-{frame}.webp" data-mobile-frame-count="160" data-mobile-frame-path="/frames/onyx-v2-mobile/frame-{frame}.webp" role="img" aria-label="Onyx Nail Studio sinematik tırnak bakım sekansı"></canvas>
+        <video class="cinematic-video" data-cinematic-video autoplay muted loop playsinline preload="auto" poster="/frames/onyx-v2/frame-0001.webp" aria-label="Onyx Nail Studio sinematik tırnak bakım videosu">
+          <source src="/videos/2.mp4" type="video/mp4" />
+        </video>
         <div class="cinematic-shade" aria-hidden="true"></div>
         <div class="cinematic-vignette" aria-hidden="true"></div>
-        <div class="cinematic-handoff" data-cinematic-handoff aria-hidden="true"></div>
-        <div class="cinematic-loading" id="cinematicLoading" data-cinematic-loading role="status" aria-live="polite"><span class="loading-mark">ON</span><span class="loading-line"></span><span data-loading-status>Hazırlanıyor</span></div>
         <div class="cinematic-copy">
-          <h1 id="cinematicTitle" class="cinematic-brand" data-cinematic-brand data-cinematic-copy>ONYX Nail Studio</h1>
-          <p class="cinematic-message cinematic-detail" data-cinematic-detail data-cinematic-copy>Detaylarda kusursuzluk.</p>
-          <p class="cinematic-message cinematic-signature" data-cinematic-signature data-cinematic-copy>Senin stilin. Senin imzan.</p>
-          <div class="cinematic-final" data-cinematic-final data-cinematic-copy>
+          <h1 id="cinematicTitle" class="cinematic-brand">ONYX Nail Studio</h1>
+          <p class="cinematic-message cinematic-detail">Detaylarda kusursuzluk.</p>
+          <p class="cinematic-message cinematic-signature">Senin stilin. Senin imzan.</p>
+          <div class="cinematic-final">
             <span>ONYX Nail Studio</span>
-            <a class="cinematic-cta" href="#booking" data-cinematic-cta>Randevu Al <span>↗</span></a>
+            <a class="cinematic-cta" href="#booking">Randevu Al <span>↗</span></a>
           </div>
         </div>
-        <div class="cinematic-scroll-hint" data-cinematic-hint aria-hidden="true"><span>SCROLL TO EXPLORE</span><i></i></div>
       </div>
     </section>
 

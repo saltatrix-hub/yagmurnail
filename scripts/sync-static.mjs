@@ -11,6 +11,7 @@ await Promise.all([
   cp('3.png', 'public/3.png'),
   cp('4.png', 'public/4.png'),
   cp('og.png', 'public/og.png'),
+  cp('videos/2.mp4', 'public/videos/2.mp4'),
 ]);
 
 await build({

@@ -7,6 +7,7 @@ dist/
 public/site.html
 public/app.js
 public/cinematic-hero.js
+public/videos/2.mp4
 public/styles.css
 public/*.png
 *.log
