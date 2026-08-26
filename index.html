@@ -21,6 +21,7 @@
   <link rel="canonical" href="https://onyx-nail-studio.saltatrix.chatgpt.site/" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="image" href="/frames/onyx-v2/frame-0001.webp" fetchpriority="high" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Italiana&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -61,7 +62,8 @@
   <main>
     <section class="cinematic-scroll" id="cinematicHero" aria-labelledby="cinematicTitle" data-scroll-hero>
       <div class="cinematic-sticky">
-        <video class="cinematic-video" id="cinematicVideo" data-cinematic-video data-desktop-src="/videos/onyx-scroll.mp4?v=20260826-nativeplay" data-mobile-src="/videos/onyx-scroll-mobile.mp4" muted playsinline preload="auto" poster="/1.png" aria-label="Onyx Nail Studio sinematik tanıtım videosu"></video>
+        <img class="cinematic-fallback-frame" src="/frames/onyx-v2/frame-0001.webp" alt="" aria-hidden="true" />
+        <canvas class="cinematic-canvas" id="cinematicCanvas" data-cinematic-canvas data-frame-count="240" data-frame-path="/frames/onyx-v2/frame-{frame}.webp" data-mobile-frame-count="160" data-mobile-frame-path="/frames/onyx-v2-mobile/frame-{frame}.webp" role="img" aria-label="Onyx Nail Studio sinematik tırnak bakım sekansı"></canvas>
         <div class="cinematic-shade" aria-hidden="true"></div>
         <div class="cinematic-vignette" aria-hidden="true"></div>
         <div class="cinematic-handoff" data-cinematic-handoff aria-hidden="true"></div>

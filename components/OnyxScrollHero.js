@@ -3,8 +3,6 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Normalized positions make the editorial timing easy to tune without
-// coupling copy animation to the source video's exact duration.
 export const ONYX_SCROLL_TIMINGS = Object.freeze({
   brandIn: 0.10,
   brandOut: 0.22,
@@ -17,16 +15,16 @@ export const ONYX_SCROLL_TIMINGS = Object.freeze({
   handoffIn: 0.94,
 });
 
-const MOBILE_QUERY = '(max-width: 720px) and (orientation: portrait)';
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
-const VIDEO_STEP_SECONDS = 3;
+const MOBILE_QUERY = '(max-width: 720px)';
+const PRELOAD_CONCURRENCY = 8;
 
 export class OnyxScrollHero {
   constructor(root) {
     if (!(root instanceof HTMLElement)) throw new TypeError('OnyxScrollHero requires a root element.');
 
     this.root = root;
-    this.video = root.querySelector('[data-cinematic-video]');
+    this.canvas = root.querySelector('[data-cinematic-canvas]');
     this.loading = root.querySelector('[data-cinematic-loading]');
     this.header = document.querySelector('.site-header');
     this.motionQuery = window.matchMedia(REDUCED_MOTION_QUERY);
@@ -34,104 +32,100 @@ export class OnyxScrollHero {
     this.abortController = new AbortController();
     this.context = null;
     this.timeline = null;
-    this.videoTween = null;
-    this.playbackRaf = 0;
-    this.scrollTween = null;
-    this.stepIndex = 0;
-    this.wheelLocked = false;
-    this.metadataReady = false;
+    this.frames = [];
+    this.framePromises = [];
+    this.requestedFrame = 0;
+    this.renderRaf = 0;
     this.isDestroyed = false;
     this.loadTimeout = 0;
-    this.resizeRefresh = gsap.delayedCall(0.2, () => ScrollTrigger.refresh()).pause();
-    this.wheelUnlock = gsap.delayedCall(4, () => { this.wheelLocked = false; }).pause();
+    this.frameCount = Number.parseInt(
+      (this.mobileQuery.matches ? this.canvas?.dataset.mobileFrameCount : this.canvas?.dataset.frameCount) || '0',
+      10,
+    );
+    this.framePath = (this.mobileQuery.matches ? this.canvas?.dataset.mobileFramePath : this.canvas?.dataset.framePath) || '';
+    this.resizeRefresh = gsap.delayedCall(0.2, () => {
+      this.resizeCanvas();
+      ScrollTrigger.refresh();
+    }).pause();
 
-    if (!(this.video instanceof HTMLVideoElement)) return;
+    if (!(this.canvas instanceof HTMLCanvasElement) || !this.canvas.getContext || this.frameCount < 2 || !this.framePath) {
+      this.activateFallback('Animasyon hazırlanamadı');
+      return;
+    }
+
+    this.ctx = this.canvas.getContext('2d', { alpha: false, desynchronized: true });
+    if (!this.ctx) {
+      this.activateFallback('Animasyon hazırlanamadı');
+      return;
+    }
+
+    this.frames = new Array(this.frameCount);
+    this.framePromises = new Array(this.frameCount);
     this.init();
   }
 
   async init() {
     const { signal } = this.abortController;
-
-    this.video.muted = true;
-    this.video.playsInline = true;
-    this.video.pause();
-
-    this.video.addEventListener('loadedmetadata', () => this.onMetadata(), { signal });
-    this.video.addEventListener('loadeddata', () => this.revealVideo(), { signal });
-    this.video.addEventListener('canplay', () => this.revealVideo(), { signal });
-    this.video.addEventListener('error', () => this.activateFallback('Video yüklenemedi'), { signal });
     this.motionQuery.addEventListener('change', () => this.rebuild(), { signal });
     window.addEventListener('resize', () => this.resizeRefresh.restart(true), { passive: true, signal });
     window.addEventListener('orientationchange', () => this.resizeRefresh.restart(true), { passive: true, signal });
-    window.addEventListener('wheel', (event) => this.handleWheel(event), { passive: false, signal });
     window.addEventListener('pagehide', () => this.destroy(), { once: true, signal });
-    document.addEventListener('pointerdown', () => this.primeVideo(), { once: true, passive: true, signal });
 
     this.loadTimeout = window.setTimeout(() => {
-      if (!this.metadataReady) this.activateFallback('Video hazırlanamadı');
+      if (!this.frames[0]) this.activateFallback('Animasyon yüklenemedi');
     }, 12000);
 
-    await this.selectVideoSource();
-    if (this.isDestroyed) return;
-    if (this.video.readyState >= HTMLMediaElement.HAVE_METADATA) this.onMetadata();
-    if (this.video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) this.revealVideo();
+    try {
+      await this.loadFrame(0);
+      if (this.isDestroyed) return;
+      window.clearTimeout(this.loadTimeout);
+      this.resizeCanvas();
+      this.drawFrame(this.frames[0]);
+      this.revealCanvas();
+      this.rebuild();
+      this.preloadFrames();
+    } catch {
+      this.activateFallback('Animasyon yüklenemedi');
+    }
   }
 
-  async selectVideoSource() {
-    const desktopSource = this.video.dataset.desktopSrc;
-    const mobileSource = this.video.dataset.mobileSrc;
-    let selectedSource = desktopSource;
+  frameUrl(index) {
+    const frameNumber = String(index + 1).padStart(4, '0');
+    return this.framePath.replace('{frame}', frameNumber);
+  }
 
-    this.root.classList.toggle('is-mobile', this.mobileQuery.matches);
-    // Scroll-scrubbing needs the media bytes ready; metadata-only loading can
-    // leave currentTime changes stalled on mobile/CDN combinations.
-    this.video.preload = 'auto';
+  loadFrame(index) {
+    const safeIndex = gsap.utils.clamp(0, this.frameCount - 1, Math.round(index));
+    if (this.frames[safeIndex]) return Promise.resolve(this.frames[safeIndex]);
+    if (this.framePromises[safeIndex]) return this.framePromises[safeIndex];
 
-    if (this.mobileQuery.matches && mobileSource) {
-      try {
-        const response = await fetch(mobileSource, {
-          method: 'HEAD',
-          cache: 'force-cache',
-          signal: this.abortController.signal,
-        });
-        if (response.ok) selectedSource = mobileSource;
-      } catch (error) {
-        if (error?.name === 'AbortError') return;
+    this.framePromises[safeIndex] = new Promise((resolve, reject) => {
+      const image = new Image();
+      image.decoding = 'async';
+      image.onload = () => {
+        this.frames[safeIndex] = image;
+        resolve(image);
+      };
+      image.onerror = reject;
+      image.src = this.frameUrl(safeIndex);
+    });
+
+    return this.framePromises[safeIndex];
+  }
+
+  async preloadFrames() {
+    let nextFrame = 1;
+    const worker = async () => {
+      while (!this.isDestroyed && nextFrame < this.frameCount) {
+        const index = nextFrame++;
+        try { await this.loadFrame(index); } catch {}
       }
-    }
-
-    if (!selectedSource) return this.activateFallback('Video kaynağı bulunamadı');
-    const absoluteSource = new URL(selectedSource, window.location.href).href;
-    if (this.video.currentSrc !== absoluteSource) {
-      this.video.src = selectedSource;
-      this.video.load();
-    }
-  }
-
-  onMetadata() {
-    if (this.metadataReady || this.isDestroyed) return;
-    if (!Number.isFinite(this.video.duration) || this.video.duration <= 0) {
-      this.activateFallback('Video süresi okunamadı');
-      return;
-    }
-
-    this.metadataReady = true;
-    window.clearTimeout(this.loadTimeout);
-    this.video.pause();
-
-    // Request the first decodable frame without allowing free playback.
-    try { this.video.currentTime = Math.min(0.01, this.video.duration); } catch {}
-    this.rebuild();
+    };
+    await Promise.all(Array.from({ length: PRELOAD_CONCURRENCY }, worker));
   }
 
   rebuild() {
-    if (!this.metadataReady || this.isDestroyed) return;
-    this.stopPlayback();
-    this.videoTween?.kill();
-    this.scrollTween?.kill();
-    this.wheelUnlock.pause(0);
-    this.wheelLocked = false;
-    this.stepIndex = Math.round(this.video.currentTime / VIDEO_STEP_SECONDS);
+    if (!this.frames[0] || this.isDestroyed) return;
     this.context?.revert();
     this.context = null;
     this.timeline = null;
@@ -155,6 +149,7 @@ export class OnyxScrollHero {
     const cta = this.root.querySelector('[data-cinematic-cta]');
     const hint = this.root.querySelector('[data-cinematic-hint]');
     const handoff = this.root.querySelector('[data-cinematic-handoff]');
+    const playhead = { frame: 0 };
     const timings = ONYX_SCROLL_TIMINGS;
 
     this.context = gsap.context(() => {
@@ -170,14 +165,11 @@ export class OnyxScrollHero {
           trigger: this.root,
           start: 'top top',
           end: 'bottom bottom',
-          // Blend discrete wheel/trackpad events into a continuous playhead.
-          scrub: 0.28,
+          scrub: 0.45,
           invalidateOnRefresh: true,
           onUpdate: (self) => {
             this.root.style.setProperty('--cinematic-progress', self.progress.toFixed(4));
             this.header?.classList.toggle('past-cinematic', self.progress >= 0.995);
-            const scrollStep = Math.round(self.progress * this.maxStepIndex());
-            if (!this.wheelLocked && scrollStep !== this.stepIndex) this.animateToStep(scrollStep);
           },
           onLeave: () => this.header?.classList.add('past-cinematic'),
           onEnterBack: () => this.header?.classList.remove('past-cinematic'),
@@ -185,6 +177,12 @@ export class OnyxScrollHero {
       });
 
       this.timeline
+        .to(playhead, {
+          frame: this.frameCount - 1,
+          duration: 1,
+          ease: 'none',
+          onUpdate: () => this.renderFrame(playhead.frame),
+        }, 0)
         .to(hint, { autoAlpha: 0, duration: 0.06, ease: 'none' }, 0.04)
         .fromTo(brand,
           { autoAlpha: 0, y: 28, scale: 0.98 },
@@ -215,140 +213,75 @@ export class OnyxScrollHero {
     }, this.root);
   }
 
-  maxStepIndex() {
-    return Math.max(1, Math.floor((this.video.duration - 0.04) / VIDEO_STEP_SECONDS));
+  renderFrame(frame) {
+    this.requestedFrame = gsap.utils.clamp(0, this.frameCount - 1, Math.round(frame));
+    this.loadFrame(this.requestedFrame).then(() => this.scheduleDraw()).catch(() => this.scheduleDraw());
+    this.scheduleDraw();
   }
 
-  handleWheel(event) {
-    if (!this.metadataReady || this.motionQuery.matches || event.ctrlKey || Math.abs(event.deltaY) < 6) return;
-    const trigger = this.timeline?.scrollTrigger;
-    const rect = this.root.getBoundingClientRect();
-    const isPinned = trigger?.isActive || (rect.top <= 1 && rect.bottom >= window.innerHeight);
-    if (!isPinned) return;
-
-    const direction = Math.sign(event.deltaY);
-    const nextStep = gsap.utils.clamp(0, this.maxStepIndex(), this.stepIndex + direction);
-    if (nextStep === this.stepIndex && !this.wheelLocked) return;
-
-    if (event.cancelable) event.preventDefault();
-    if (this.wheelLocked) return;
-
-    this.wheelLocked = true;
-    this.wheelUnlock.restart(true);
-    this.animateToStep(nextStep);
-    this.scrollToStep(nextStep);
+  scheduleDraw() {
+    if (this.renderRaf || this.isDestroyed) return;
+    this.renderRaf = window.requestAnimationFrame(() => {
+      this.renderRaf = 0;
+      const image = this.frames[this.requestedFrame] || this.nearestLoadedFrame(this.requestedFrame);
+      if (image) this.drawFrame(image);
+    });
   }
 
-  animateToStep(step) {
-    if (!this.metadataReady || this.video.readyState < HTMLMediaElement.HAVE_METADATA) return;
-    const nextStep = gsap.utils.clamp(0, this.maxStepIndex(), step);
-    const targetTime = Math.min(this.video.duration - 0.04, nextStep * VIDEO_STEP_SECONDS);
-    const currentTime = this.video.currentTime;
-    this.stepIndex = nextStep;
-    this.stopPlayback();
-    this.videoTween?.kill();
-
-    if (targetTime > currentTime + 0.04) {
-      this.playForwardTo(targetTime);
-      return;
+  nearestLoadedFrame(index) {
+    for (let distance = 1; distance < this.frameCount; distance += 1) {
+      if (this.frames[index - distance]) return this.frames[index - distance];
+      if (this.frames[index + distance]) return this.frames[index + distance];
     }
-
-    this.tweenToTime(targetTime);
+    return this.frames[0];
   }
 
-  playForwardTo(targetTime) {
-    const distance = Math.max(0.01, targetTime - this.video.currentTime);
-    this.video.playbackRate = gsap.utils.clamp(0.5, 4, distance / 1.2);
-
-    const watchFrame = () => {
-      if (this.isDestroyed) return;
-      if (this.video.currentTime >= targetTime - 0.025) {
-        this.video.pause();
-        this.video.playbackRate = 1;
-        try { this.video.currentTime = targetTime; } catch {}
-        this.playbackRaf = 0;
-        this.wheelLocked = false;
-        this.wheelUnlock.pause(0);
-        return;
-      }
-      this.playbackRaf = window.requestAnimationFrame(watchFrame);
-    };
-
-    this.video.play()
-      .then(() => { this.playbackRaf = window.requestAnimationFrame(watchFrame); })
-      .catch(() => {
-        this.video.playbackRate = 1;
-        this.tweenToTime(targetTime);
-      });
+  resizeCanvas() {
+    if (!this.canvas || !this.ctx) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const width = Math.max(1, Math.round(rect.width * dpr));
+    const height = Math.max(1, Math.round(rect.height * dpr));
+    if (this.canvas.width !== width || this.canvas.height !== height) {
+      this.canvas.width = width;
+      this.canvas.height = height;
+    }
+    const image = this.frames[this.requestedFrame] || this.nearestLoadedFrame(this.requestedFrame);
+    if (image) this.drawFrame(image);
   }
 
-  tweenToTime(targetTime) {
-    const playhead = { time: this.video.currentTime };
-    this.videoTween = gsap.to(playhead, {
-      time: targetTime,
-      duration: 1.2,
-      ease: 'power2.inOut',
-      overwrite: true,
-      onUpdate: () => {
-        try { this.video.currentTime = playhead.time; } catch {}
-      },
-      onComplete: () => {
-        try { this.video.currentTime = targetTime; } catch {}
-        this.wheelLocked = false;
-        this.wheelUnlock.pause(0);
-      },
-    });
-  }
-
-  stopPlayback() {
-    window.cancelAnimationFrame(this.playbackRaf);
-    this.playbackRaf = 0;
-    this.video.pause();
-    this.video.playbackRate = 1;
-  }
-
-  scrollToStep(step) {
-    const trigger = this.timeline?.scrollTrigger;
-    if (!trigger) return;
-    const scrollState = { y: window.scrollY };
-    const targetY = trigger.start + ((trigger.end - trigger.start) * step / this.maxStepIndex());
-    this.scrollTween?.kill();
-    this.scrollTween = gsap.to(scrollState, {
-      y: targetY,
-      duration: 1.05,
-      ease: 'power2.inOut',
-      overwrite: true,
-      onUpdate: () => window.scrollTo(0, scrollState.y),
-    });
+  drawFrame(image) {
+    if (!image || !this.ctx || !this.canvas.width || !this.canvas.height) return;
+    const scale = Math.max(this.canvas.width / image.naturalWidth, this.canvas.height / image.naturalHeight);
+    const width = image.naturalWidth * scale;
+    const height = image.naturalHeight * scale;
+    const x = (this.canvas.width - width) / 2;
+    const y = (this.canvas.height - height) / 2;
+    this.ctx.imageSmoothingEnabled = true;
+    this.ctx.imageSmoothingQuality = 'high';
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.drawImage(image, x, y, width, height);
   }
 
   applyReducedMotion() {
-    this.stopPlayback();
-    this.videoTween?.kill();
-    this.scrollTween?.kill();
     this.root.classList.add('is-reduced');
-    this.video.pause();
-    try { this.video.currentTime = 0; } catch {}
-    this.revealVideo();
+    this.requestedFrame = 0;
+    this.drawFrame(this.frames[0]);
+    this.revealCanvas();
   }
 
-  revealVideo() {
-    this.video.classList.add('is-ready');
+  revealCanvas() {
+    this.canvas.classList.add('is-ready');
     this.loading?.classList.add('is-hidden');
   }
 
   activateFallback(message) {
     if (this.isDestroyed) return;
     window.clearTimeout(this.loadTimeout);
-    this.stopPlayback();
-    this.videoTween?.kill();
-    this.scrollTween?.kill();
     this.context?.revert();
     this.context = null;
     this.timeline = null;
-    this.video.pause();
     this.root.classList.add('is-fallback');
-    this.video.classList.add('is-ready');
     if (this.loading) {
       const status = this.loading.querySelector('[data-loading-status]');
       if (status) status.textContent = message;
@@ -357,26 +290,13 @@ export class OnyxScrollHero {
     this.header?.classList.add('past-cinematic');
   }
 
-  async primeVideo() {
-    if (!this.metadataReady || this.motionQuery.matches || this.isDestroyed) return;
-    try {
-      await this.video.play();
-      this.video.pause();
-    } catch {
-      // Muted inline seeking still works on most browsers without priming.
-    }
-  }
-
   destroy() {
     if (this.isDestroyed) return;
     this.isDestroyed = true;
     window.clearTimeout(this.loadTimeout);
+    window.cancelAnimationFrame(this.renderRaf);
     this.abortController.abort();
     this.resizeRefresh.kill();
-    this.wheelUnlock.kill();
-    this.stopPlayback();
-    this.videoTween?.kill();
-    this.scrollTween?.kill();
     this.context?.revert();
     this.header?.classList.remove('past-cinematic');
     this.root.style.removeProperty('--cinematic-progress');
