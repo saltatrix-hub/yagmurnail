@@ -57,10 +57,6 @@ window.addEventListener('resize', () => {
   if (window.innerWidth > 1020) setMobileMenu(false);
 }, { passive: true });
 
-document.getElementById('brandLogo')?.addEventListener('error', (event) => {
-  event.currentTarget.style.display = 'none';
-});
-
 const year = document.getElementById('year');
 if (year) year.textContent = new Date().getFullYear();
 

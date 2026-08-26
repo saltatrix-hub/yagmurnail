@@ -10,5 +10,11 @@ public/cinematic-hero.js
 public/videos/2.mp4
 public/styles.css
 public/*.png
+public/index.html
+public/favicon.ico
+public/logo-mark.svg
+public/logo/
 *.log
 *.tsbuildinfo
+onyx-logo.png
+logo/*-preview.png

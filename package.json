@@ -14,7 +14,8 @@
     "build": "vinext build",
     "start": "vinext start",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern public",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "deploy:pages": "npm run build && wrangler pages deploy public"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",

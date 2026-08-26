@@ -10,7 +10,15 @@ export const metadata: Metadata = {
     type: 'website',
     images: [{ url: '/og.png', width: 1729, height: 910, alt: 'Onyx Nail Studio — Detaylarda kusursuzluk' }]
   },
-  twitter: { card: 'summary_large_image', images: ['/og.png'] }
+  twitter: { card: 'summary_large_image', images: ['/og.png'] },
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
