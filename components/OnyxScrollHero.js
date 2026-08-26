@@ -34,10 +34,15 @@ export class OnyxScrollHero {
     this.abortController = new AbortController();
     this.context = null;
     this.timeline = null;
+    this.videoTween = null;
+    this.scrollTween = null;
+    this.stepIndex = 0;
+    this.wheelLocked = false;
     this.metadataReady = false;
     this.isDestroyed = false;
     this.loadTimeout = 0;
     this.resizeRefresh = gsap.delayedCall(0.2, () => ScrollTrigger.refresh()).pause();
+    this.wheelUnlock = gsap.delayedCall(1.35, () => { this.wheelLocked = false; }).pause();
 
     if (!(this.video instanceof HTMLVideoElement)) return;
     this.init();
@@ -57,6 +62,7 @@ export class OnyxScrollHero {
     this.motionQuery.addEventListener('change', () => this.rebuild(), { signal });
     window.addEventListener('resize', () => this.resizeRefresh.restart(true), { passive: true, signal });
     window.addEventListener('orientationchange', () => this.resizeRefresh.restart(true), { passive: true, signal });
+    window.addEventListener('wheel', (event) => this.handleWheel(event), { passive: false, signal });
     window.addEventListener('pagehide', () => this.destroy(), { once: true, signal });
     document.addEventListener('pointerdown', () => this.primeVideo(), { once: true, passive: true, signal });
 
@@ -119,6 +125,11 @@ export class OnyxScrollHero {
 
   rebuild() {
     if (!this.metadataReady || this.isDestroyed) return;
+    this.videoTween?.kill();
+    this.scrollTween?.kill();
+    this.wheelUnlock.pause(0);
+    this.wheelLocked = false;
+    this.stepIndex = Math.round(this.video.currentTime / VIDEO_STEP_SECONDS);
     this.context?.revert();
     this.context = null;
     this.timeline = null;
@@ -142,8 +153,6 @@ export class OnyxScrollHero {
     const cta = this.root.querySelector('[data-cinematic-cta]');
     const hint = this.root.querySelector('[data-cinematic-hint]');
     const handoff = this.root.querySelector('[data-cinematic-handoff]');
-    const playhead = { time: 0 };
-    const endTime = Math.max(0, this.video.duration - 0.04);
     const timings = ONYX_SCROLL_TIMINGS;
 
     this.context = gsap.context(() => {
@@ -165,6 +174,8 @@ export class OnyxScrollHero {
           onUpdate: (self) => {
             this.root.style.setProperty('--cinematic-progress', self.progress.toFixed(4));
             this.header?.classList.toggle('past-cinematic', self.progress >= 0.995);
+            const scrollStep = Math.round(self.progress * this.maxStepIndex());
+            if (!this.wheelLocked && scrollStep !== this.stepIndex) this.animateToStep(scrollStep);
           },
           onLeave: () => this.header?.classList.add('past-cinematic'),
           onEnterBack: () => this.header?.classList.remove('past-cinematic'),
@@ -172,12 +183,6 @@ export class OnyxScrollHero {
       });
 
       this.timeline
-        .to(playhead, {
-          time: endTime,
-          duration: 1,
-          ease: 'none',
-          onUpdate: () => this.seek(playhead.time),
-        }, 0)
         .to(hint, { autoAlpha: 0, duration: 0.06, ease: 'none' }, 0.04)
         .fromTo(brand,
           { autoAlpha: 0, y: 28, scale: 0.98 },
@@ -208,20 +213,70 @@ export class OnyxScrollHero {
     }, this.root);
   }
 
-  seek(time) {
+  maxStepIndex() {
+    return Math.max(1, Math.floor((this.video.duration - 0.04) / VIDEO_STEP_SECONDS));
+  }
+
+  handleWheel(event) {
+    if (!this.metadataReady || this.motionQuery.matches || event.ctrlKey || Math.abs(event.deltaY) < 6) return;
+    const trigger = this.timeline?.scrollTrigger;
+    const rect = this.root.getBoundingClientRect();
+    const isPinned = trigger?.isActive || (rect.top <= 1 && rect.bottom >= window.innerHeight);
+    if (!isPinned) return;
+
+    const direction = Math.sign(event.deltaY);
+    const nextStep = gsap.utils.clamp(0, this.maxStepIndex(), this.stepIndex + direction);
+    if (nextStep === this.stepIndex && !this.wheelLocked) return;
+
+    if (event.cancelable) event.preventDefault();
+    if (this.wheelLocked) return;
+
+    this.wheelLocked = true;
+    this.wheelUnlock.restart(true);
+    this.animateToStep(nextStep);
+    this.scrollToStep(nextStep);
+  }
+
+  animateToStep(step) {
     if (!this.metadataReady || this.video.readyState < HTMLMediaElement.HAVE_METADATA) return;
-    const endTime = Math.max(0, this.video.duration - 0.04);
-    const steppedTime = Math.min(endTime, Math.round(time / VIDEO_STEP_SECONDS) * VIDEO_STEP_SECONDS);
-    if (Math.abs(this.video.currentTime - steppedTime) < 0.02) return;
-    try {
-      this.video.pause();
-      this.video.currentTime = steppedTime;
-    } catch {
-      this.activateFallback('Video bu cihazda kaydırılamadı');
-    }
+    const nextStep = gsap.utils.clamp(0, this.maxStepIndex(), step);
+    const targetTime = Math.min(this.video.duration - 0.04, nextStep * VIDEO_STEP_SECONDS);
+    const playhead = { time: this.video.currentTime };
+    this.stepIndex = nextStep;
+    this.video.pause();
+    this.videoTween?.kill();
+    this.videoTween = gsap.to(playhead, {
+      time: targetTime,
+      duration: 1.2,
+      ease: 'power2.inOut',
+      overwrite: true,
+      onUpdate: () => {
+        try { this.video.currentTime = playhead.time; } catch {}
+      },
+      onComplete: () => {
+        try { this.video.currentTime = targetTime; } catch {}
+      },
+    });
+  }
+
+  scrollToStep(step) {
+    const trigger = this.timeline?.scrollTrigger;
+    if (!trigger) return;
+    const scrollState = { y: window.scrollY };
+    const targetY = trigger.start + ((trigger.end - trigger.start) * step / this.maxStepIndex());
+    this.scrollTween?.kill();
+    this.scrollTween = gsap.to(scrollState, {
+      y: targetY,
+      duration: 1.05,
+      ease: 'power2.inOut',
+      overwrite: true,
+      onUpdate: () => window.scrollTo(0, scrollState.y),
+    });
   }
 
   applyReducedMotion() {
+    this.videoTween?.kill();
+    this.scrollTween?.kill();
     this.root.classList.add('is-reduced');
     this.video.pause();
     try { this.video.currentTime = 0; } catch {}
@@ -236,6 +291,8 @@ export class OnyxScrollHero {
   activateFallback(message) {
     if (this.isDestroyed) return;
     window.clearTimeout(this.loadTimeout);
+    this.videoTween?.kill();
+    this.scrollTween?.kill();
     this.context?.revert();
     this.context = null;
     this.timeline = null;
@@ -266,6 +323,9 @@ export class OnyxScrollHero {
     window.clearTimeout(this.loadTimeout);
     this.abortController.abort();
     this.resizeRefresh.kill();
+    this.wheelUnlock.kill();
+    this.videoTween?.kill();
+    this.scrollTween?.kill();
     this.context?.revert();
     this.header?.classList.remove('past-cinematic');
     this.root.style.removeProperty('--cinematic-progress');
