@@ -32,7 +32,7 @@ function renderServices(){
       <h3>${s.name}</h3>
       <p>${s.desc}</p>
       <div class="service-foot">
-        <div class="service-price"><small>TAHMİNİ FİYAT</small><strong>${servicePrice(s)}</strong></div>
+        <span class="service-action-copy">RANDEVUNA EKLE</span>
         <button class="service-select" type="button" data-add-service="${s.id}" aria-label="${s.name} seç" aria-pressed="false">+</button>
       </div>
     </article>`).join('');
