@@ -33,12 +33,12 @@ function renderServices(){
       <p>${s.desc}</p>
       <div class="service-foot">
         <div class="service-price"><small>TAHMİNİ FİYAT</small><strong>${servicePrice(s)}</strong></div>
-        <button class="service-select" data-add-service="${s.id}" aria-label="${s.name} seç">+</button>
+        <button class="service-select" type="button" data-add-service="${s.id}" aria-label="${s.name} seç" aria-pressed="false">+</button>
       </div>
     </article>`).join('');
 
   bookingServices.innerHTML = services.map(s=>`
-    <button class="booking-service" type="button" data-booking-service="${s.id}">
+    <button class="booking-service" type="button" data-booking-service="${s.id}" aria-pressed="false">
       <span class="check">✓</span>
       <span class="s-copy"><strong>${s.name}</strong><small>${servicePrice(s)} · ~${s.duration} dk</small></span>
     </button>`).join('');
@@ -57,7 +57,12 @@ function toggleService(id){
     el.classList.toggle('selected',selected);
     el.setAttribute('aria-pressed',String(selected));
   });
-  document.querySelectorAll(`[data-add-service="${id}"]`).forEach(el=>el.setAttribute('aria-pressed',String(state.selectedServices.has(id))));
+  document.querySelectorAll(`[data-add-service="${id}"]`).forEach(el=>{
+    const selected=state.selectedServices.has(id);
+    el.setAttribute('aria-pressed',String(selected));
+    const service=services.find(item=>item.id===id);
+    if(service)el.setAttribute('aria-label',`${service.name} ${selected?'seçimini kaldır':'seç'}`);
+  });
   updateSummary();
   renderTimes();
 }
@@ -88,7 +93,7 @@ function renderDates(){
   }
   const todayKey=dateKey(new Date());
   dateScroller.innerHTML=items.map(d=>`
-    <button class="date-card ${state.date===dateKey(d)?'active':''}" data-date="${dateKey(d)}">
+    <button class="date-card ${state.date===dateKey(d)?'active':''}" type="button" data-date="${dateKey(d)}" aria-pressed="${state.date===dateKey(d)}">
       <small>${dateKey(d)===todayKey?'Bugün':trDays[d.getDay()]}</small><strong>${d.getDate()}</strong><span>${trMonths[d.getMonth()]}</span>
     </button>`).join('');
   dateScroller.querySelectorAll('.date-card').forEach(b=>b.addEventListener('click',()=>{
@@ -206,8 +211,20 @@ document.addEventListener('keydown',e=>{
 });
 
 const mobileBtn=document.getElementById('mobileMenuBtn'), mobileMenu=document.getElementById('mobileMenu');
-mobileBtn.addEventListener('click',()=>{const open=mobileMenu.hasAttribute('hidden'); if(open) mobileMenu.removeAttribute('hidden'); else mobileMenu.setAttribute('hidden',''); mobileBtn.setAttribute('aria-expanded',open?'true':'false');mobileBtn.setAttribute('aria-label',open?'Menüyü kapat':'Menüyü aç')});
-mobileMenu.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{mobileMenu.setAttribute('hidden','');mobileBtn.setAttribute('aria-expanded','false');mobileBtn.setAttribute('aria-label','Menüyü aç')}));
+function setMobileMenu(open){
+  mobileMenu.toggleAttribute('hidden',!open);
+  mobileBtn.setAttribute('aria-expanded',String(open));
+  mobileBtn.setAttribute('aria-label',open?'Menüyü kapat':'Menüyü aç');
+}
+mobileBtn.addEventListener('click',()=>setMobileMenu(mobileMenu.hasAttribute('hidden')));
+mobileMenu.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>setMobileMenu(false)));
+document.addEventListener('click',event=>{
+  if(!mobileMenu.hasAttribute('hidden')&&!mobileMenu.contains(event.target)&&!mobileBtn.contains(event.target))setMobileMenu(false);
+});
+document.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&!mobileMenu.hasAttribute('hidden')){setMobileMenu(false);mobileBtn.focus();}
+});
+window.addEventListener('resize',()=>{if(window.innerWidth>1020)setMobileMenu(false)},{passive:true});
 
 document.getElementById('brandLogo').addEventListener('error',e=>{e.currentTarget.style.display='none'});
 document.getElementById('year').textContent=new Date().getFullYear();

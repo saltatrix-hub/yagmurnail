@@ -48,7 +48,7 @@
     </nav>
 
     <a class="btn btn-dark header-cta" href="#booking">Randevu Al</a>
-    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menüyü aç" aria-expanded="false">☰</button>
+    <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Menüyü aç" aria-controls="mobileMenu" aria-expanded="false">☰</button>
   </header>
 
   <div class="mobile-menu" id="mobileMenu" hidden>
@@ -149,9 +149,9 @@
 
         <div class="booking-card reveal">
           <div class="booking-steps" aria-label="Randevu adımları">
-            <button class="step active" data-step="1"><span>1</span> Hizmet</button>
-            <button class="step" data-step="2"><span>2</span> Tarih & Saat</button>
-            <button class="step" data-step="3"><span>3</span> Bilgiler</button>
+            <button class="step active" type="button" data-step="1" aria-current="step"><span>1</span> Hizmet</button>
+            <button class="step" type="button" data-step="2"><span>2</span> Tarih & Saat</button>
+            <button class="step" type="button" data-step="3"><span>3</span> Bilgiler</button>
           </div>
 
           <div class="booking-panel active" data-panel="1">
@@ -246,14 +246,14 @@
   <div class="modal" id="successModal" aria-hidden="true">
     <div class="modal-backdrop" data-close-modal></div>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="successTitle">
-      <button class="modal-close" data-close-modal aria-label="Kapat">×</button>
+      <button class="modal-close" type="button" data-close-modal aria-label="Kapat">×</button>
       <div class="success-icon">✓</div>
       <small>RANDEVU TALEBİN ALINDI</small>
       <h3 id="successTitle">Harika, son bir adım kaldı.</h3>
       <p id="successCopy">Randevu bilgilerini kontrol ettik. WhatsApp üzerinden stüdyoya göndererek teyit edebilirsin.</p>
       <div class="modal-summary" id="modalSummary"></div>
       <a class="btn btn-primary" id="whatsappConfirm" href="#" target="_blank" rel="noopener">WhatsApp'tan Teyit Et <span>↗</span></a>
-      <button class="btn btn-ghost" data-close-modal>Siteye Dön</button>
+      <button class="btn btn-ghost" type="button" data-close-modal>Siteye Dön</button>
     </div>
   </div>
 

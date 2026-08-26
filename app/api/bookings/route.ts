@@ -15,12 +15,13 @@ export async function POST(request: NextRequest) {
 
   const date = typeof input.date === 'string' ? input.date : '';
   const time = typeof input.time === 'string' ? input.time : '';
-  const serviceIds = Array.isArray(input.serviceIds) ? [...new Set(input.serviceIds.filter((id): id is keyof typeof serviceCatalog => typeof id === 'string' && id in serviceCatalog))] : [];
+  const rawServiceIds = Array.isArray(input.serviceIds) ? input.serviceIds : [];
+  const serviceIds = [...new Set(rawServiceIds.filter((id): id is keyof typeof serviceCatalog => typeof id === 'string' && id in serviceCatalog))];
   const name = typeof input.customer?.name === 'string' ? input.customer.name.trim() : '';
   const phone = typeof input.customer?.phone === 'string' ? input.customer.phone.replace(/\s+/g, '') : '';
   const note = typeof input.customer?.note === 'string' ? input.customer.note.trim().slice(0, 500) : '';
 
-  if (!validAppointmentDate(date) || !/^\d{2}:\d{2}$/.test(time) || !serviceIds.length) return NextResponse.json({ error: 'Randevu bilgileri geçersiz.' }, { status: 400 });
+  if (!validAppointmentDate(date) || !/^\d{2}:\d{2}$/.test(time) || !serviceIds.length || serviceIds.length !== rawServiceIds.length) return NextResponse.json({ error: 'Randevu bilgileri geçersiz.' }, { status: 400 });
   if (name.length < 3 || name.length > 80 || !/^(?:\+?90|0)?5\d{9}$/.test(phone)) return NextResponse.json({ error: 'Ad soyad veya telefon numarası geçersiz.' }, { status: 400 });
 
   const start = minutes(time);
@@ -34,10 +35,10 @@ export async function POST(request: NextRequest) {
   const id = crypto.randomUUID();
   const bookingCode = `ONX-${crypto.randomUUID().replaceAll('-', '').slice(0, 8).toUpperCase()}`;
   const createdAt = new Date().toISOString();
-  const db = getD1();
-  await ensureSchema(db);
 
   try {
+    const db = getD1();
+    await ensureSchema(db);
     await db.batch([
       db.prepare(`INSERT INTO bookings (id, booking_code, customer_name, customer_phone, note, appointment_date, start_time, duration_minutes, service_ids, status, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`).bind(id, bookingCode, name, phone, note || null, date, time, duration, JSON.stringify(serviceIds), createdAt),
@@ -46,7 +47,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (/UNIQUE|constraint/i.test(message)) return NextResponse.json({ error: 'Bu saat az önce doldu. Lütfen başka bir saat seçin.' }, { status: 409 });
-    throw error;
+    console.error('Booking creation failed.', error);
+    return NextResponse.json({ error: 'Randevu şu anda oluşturulamıyor. Lütfen tekrar deneyin.' }, { status: 503 });
   }
 
   return NextResponse.json({ booking: { id: bookingCode, date, time, duration, services: serviceIds.map((serviceId) => serviceCatalog[serviceId].name) } }, { status: 201 });
