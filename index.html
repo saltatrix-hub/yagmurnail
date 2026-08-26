@@ -47,7 +47,7 @@
       <a href="#contact">İletişim</a>
     </nav>
 
-    <a class="btn btn-dark header-cta" href="#booking">Randevu Al</a>
+    <a class="btn btn-dark header-cta" href="https://www.kolayrandevu.com/isletme/onyx-nail-studio?website=1" target="_blank" rel="noopener noreferrer">Randevu Al</a>
     <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Menüyü aç" aria-controls="mobileMenu" aria-expanded="false">☰</button>
   </header>
 
@@ -56,7 +56,7 @@
     <a href="#studio">Stüdyo</a>
     <a href="#reviews">Yorumlar</a>
     <a href="#contact">İletişim</a>
-    <a class="btn btn-dark" href="#booking">Randevu Al</a>
+    <a class="btn btn-dark" href="https://www.kolayrandevu.com/isletme/onyx-nail-studio?website=1" target="_blank" rel="noopener noreferrer">Randevu Al</a>
   </div>
 
   <main>
@@ -73,7 +73,7 @@
           <p class="cinematic-message cinematic-signature">Senin stilin. Senin imzan.</p>
           <div class="cinematic-final">
             <span>ONYX Nail Studio</span>
-            <a class="cinematic-cta" href="#booking">Randevu Al <span>↗</span></a>
+            <a class="cinematic-cta" href="https://www.kolayrandevu.com/isletme/onyx-nail-studio?website=1" target="_blank" rel="noopener noreferrer">Randevu Al <span>↗</span></a>
           </div>
         </div>
         <a class="hero-booking-panel" href="https://www.kolayrandevu.com/isletme/onyx-nail-studio?website=1" target="_blank" rel="noopener noreferrer" aria-label="KolayRandevu üzerinden Onyx Nail Studio randevusu al">
@@ -139,67 +139,21 @@
       </div>
     </section>
 
-    <section class="booking-section" id="booking">
-      <div class="section-shell booking-shell">
-        <div class="booking-intro reveal">
-          <div class="eyebrow"><span></span> ONLINE RANDEVU</div>
-          <h2>Randevunu<br/><em>3 adımda</em> oluştur.</h2>
-          <p>Hizmetini seç, uygun günü ve saati belirle, iletişim bilgilerini bırak. Sistem toplam süreyi ve fiyat aralığını otomatik hesaplar.</p>
-          <div class="booking-trust">
-            <div><span>✓</span> Pazar günleri kapalı</div>
-            <div><span>✓</span> 30 dk aralıklarla saat seçimi</div>
-            <div><span>✓</span> WhatsApp ile hızlı teyit</div>
-          </div>
+    <section class="landing-cta" id="booking" aria-labelledby="landingCtaTitle">
+      <div class="section-shell landing-cta-shell">
+        <div class="landing-cta-copy reveal">
+          <div class="eyebrow light"><span></span> RANDEVUNU PLANLA</div>
+          <h2 id="landingCtaTitle">Stilini seç.<br/><em>Gerisini bize bırak.</em></h2>
+          <p>KolayRandevu üzerinden hizmetini, sana uygun günü ve saati birkaç dakikada seç. Randevun doğrudan Onyx Nail Studio takvimine işlensin.</p>
+          <a class="landing-cta-button" href="https://www.kolayrandevu.com/isletme/onyx-nail-studio?website=1" target="_blank" rel="noopener noreferrer">
+            <span>Online randevu al</span><b>↗</b>
+          </a>
         </div>
-
-        <div class="booking-card reveal">
-          <div class="booking-steps" aria-label="Randevu adımları">
-            <button class="step active" type="button" data-step="1" aria-current="step"><span>1</span> Hizmet</button>
-            <button class="step" type="button" data-step="2"><span>2</span> Tarih & Saat</button>
-            <button class="step" type="button" data-step="3"><span>3</span> Bilgiler</button>
-          </div>
-
-          <div class="booking-panel active" data-panel="1">
-            <h3>Hangi işlemleri yaptırmak istersin?</h3>
-            <p class="muted">Birden fazla hizmet seçebilirsin.</p>
-            <div class="booking-services" id="bookingServices"></div>
-            <button class="btn btn-primary booking-next" data-next="2">Tarih & Saat Seç <span>→</span></button>
-          </div>
-
-          <div class="booking-panel" data-panel="2">
-            <button class="back-btn" data-back="1">← Hizmetlere dön</button>
-            <h3>Uygun zamanı seç</h3>
-            <p class="muted">Pazar kapalıdır. Saatler 10:00–20:00 arasındadır.</p>
-            <div class="date-scroller" id="dateScroller"></div>
-            <div class="time-head"><strong>Uygun saatler</strong><small id="selectedDateLabel">Tarih seçin</small></div>
-            <div class="time-grid" id="timeGrid"></div>
-            <button class="btn btn-primary booking-next" data-next="3">Bilgilerime Geç <span>→</span></button>
-          </div>
-
-          <div class="booking-panel" data-panel="3">
-            <button class="back-btn" data-back="2">← Tarih & saate dön</button>
-            <h3>Son adım</h3>
-            <p class="muted">Randevu teyidi için iletişim bilgilerini gir.</p>
-            <form id="bookingForm" class="booking-form">
-              <label>Ad Soyad<input required minlength="3" maxlength="80" id="customerName" name="name" type="text" autocomplete="name" placeholder="Adınız Soyadınız" /></label>
-              <label>Telefon<input required id="customerPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" pattern="[+0-9 ]{10,18}" title="05xx xxx xx xx biçiminde bir cep telefonu girin" placeholder="05xx xxx xx xx" /></label>
-              <label>Not <textarea id="customerNote" name="note" rows="3" maxlength="500" placeholder="Nail art detayı, renk tercihi vb. (opsiyonel)"></textarea></label>
-              <label class="consent"><input required type="checkbox" /> <span>Randevu teyidi için benimle iletişime geçilmesini kabul ediyorum.</span></label>
-              <button class="btn btn-primary" type="submit">Randevuyu Oluştur <span>✓</span></button>
-            </form>
-          </div>
-
-          <aside class="booking-summary" id="bookingSummary">
-            <div>
-              <small>SEÇİMİN</small>
-              <strong id="summaryServices">Henüz hizmet seçilmedi</strong>
-            </div>
-            <div class="summary-row"><span>Tarih</span><b id="summaryDate">—</b></div>
-            <div class="summary-row"><span>Saat</span><b id="summaryTime">—</b></div>
-            <div class="summary-row"><span>Süre</span><b id="summaryDuration">—</b></div>
-            <div class="summary-total"><span>Tahmini toplam</span><strong id="summaryPrice">—</strong></div>
-          </aside>
-        </div>
+        <ol class="landing-steps reveal" aria-label="Randevu adımları">
+          <li><span>01</span><div><strong>Hizmetini seç</strong><small>Manikürden nail art'a kadar istediğin işlemi belirle.</small></div></li>
+          <li><span>02</span><div><strong>Uygun saati bul</strong><small>Takvimde sana uyan günü ve saati görüntüle.</small></div></li>
+          <li><span>03</span><div><strong>Randevunu tamamla</strong><small>Bilgilerini gir ve randevunu güvenle oluştur.</small></div></li>
+        </ol>
       </div>
     </section>
 
@@ -245,22 +199,6 @@
     <p>© <span id="year"></span> Onyx Nail Studio. Tüm hakları saklıdır.</p>
     <a href="#top">Yukarı dön ↑</a>
   </footer>
-
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-  <div class="modal" id="successModal" aria-hidden="true">
-    <div class="modal-backdrop" data-close-modal></div>
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="successTitle">
-      <button class="modal-close" type="button" data-close-modal aria-label="Kapat">×</button>
-      <div class="success-icon">✓</div>
-      <small>RANDEVU TALEBİN ALINDI</small>
-      <h3 id="successTitle">Harika, son bir adım kaldı.</h3>
-      <p id="successCopy">Randevu bilgilerini kontrol ettik. WhatsApp üzerinden stüdyoya göndererek teyit edebilirsin.</p>
-      <div class="modal-summary" id="modalSummary"></div>
-      <a class="btn btn-primary" id="whatsappConfirm" href="#" target="_blank" rel="noopener">WhatsApp'tan Teyit Et <span>↗</span></a>
-      <button class="btn btn-ghost" type="button" data-close-modal>Siteye Dön</button>
-    </div>
-  </div>
 
   <script src="cinematic-hero.js"></script>
   <script src="app.js"></script>
