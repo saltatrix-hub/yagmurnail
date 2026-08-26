@@ -35,6 +35,7 @@ export class OnyxScrollHero {
     this.context = null;
     this.timeline = null;
     this.videoTween = null;
+    this.playbackRaf = 0;
     this.scrollTween = null;
     this.stepIndex = 0;
     this.wheelLocked = false;
@@ -42,7 +43,7 @@ export class OnyxScrollHero {
     this.isDestroyed = false;
     this.loadTimeout = 0;
     this.resizeRefresh = gsap.delayedCall(0.2, () => ScrollTrigger.refresh()).pause();
-    this.wheelUnlock = gsap.delayedCall(1.35, () => { this.wheelLocked = false; }).pause();
+    this.wheelUnlock = gsap.delayedCall(4, () => { this.wheelLocked = false; }).pause();
 
     if (!(this.video instanceof HTMLVideoElement)) return;
     this.init();
@@ -125,6 +126,7 @@ export class OnyxScrollHero {
 
   rebuild() {
     if (!this.metadataReady || this.isDestroyed) return;
+    this.stopPlayback();
     this.videoTween?.kill();
     this.scrollTween?.kill();
     this.wheelUnlock.pause(0);
@@ -241,10 +243,47 @@ export class OnyxScrollHero {
     if (!this.metadataReady || this.video.readyState < HTMLMediaElement.HAVE_METADATA) return;
     const nextStep = gsap.utils.clamp(0, this.maxStepIndex(), step);
     const targetTime = Math.min(this.video.duration - 0.04, nextStep * VIDEO_STEP_SECONDS);
-    const playhead = { time: this.video.currentTime };
+    const currentTime = this.video.currentTime;
     this.stepIndex = nextStep;
-    this.video.pause();
+    this.stopPlayback();
     this.videoTween?.kill();
+
+    if (targetTime > currentTime + 0.04) {
+      this.playForwardTo(targetTime);
+      return;
+    }
+
+    this.tweenToTime(targetTime);
+  }
+
+  playForwardTo(targetTime) {
+    const distance = Math.max(0.01, targetTime - this.video.currentTime);
+    this.video.playbackRate = gsap.utils.clamp(0.5, 4, distance / 1.2);
+
+    const watchFrame = () => {
+      if (this.isDestroyed) return;
+      if (this.video.currentTime >= targetTime - 0.025) {
+        this.video.pause();
+        this.video.playbackRate = 1;
+        try { this.video.currentTime = targetTime; } catch {}
+        this.playbackRaf = 0;
+        this.wheelLocked = false;
+        this.wheelUnlock.pause(0);
+        return;
+      }
+      this.playbackRaf = window.requestAnimationFrame(watchFrame);
+    };
+
+    this.video.play()
+      .then(() => { this.playbackRaf = window.requestAnimationFrame(watchFrame); })
+      .catch(() => {
+        this.video.playbackRate = 1;
+        this.tweenToTime(targetTime);
+      });
+  }
+
+  tweenToTime(targetTime) {
+    const playhead = { time: this.video.currentTime };
     this.videoTween = gsap.to(playhead, {
       time: targetTime,
       duration: 1.2,
@@ -255,8 +294,17 @@ export class OnyxScrollHero {
       },
       onComplete: () => {
         try { this.video.currentTime = targetTime; } catch {}
+        this.wheelLocked = false;
+        this.wheelUnlock.pause(0);
       },
     });
+  }
+
+  stopPlayback() {
+    window.cancelAnimationFrame(this.playbackRaf);
+    this.playbackRaf = 0;
+    this.video.pause();
+    this.video.playbackRate = 1;
   }
 
   scrollToStep(step) {
@@ -275,6 +323,7 @@ export class OnyxScrollHero {
   }
 
   applyReducedMotion() {
+    this.stopPlayback();
     this.videoTween?.kill();
     this.scrollTween?.kill();
     this.root.classList.add('is-reduced');
@@ -291,6 +340,7 @@ export class OnyxScrollHero {
   activateFallback(message) {
     if (this.isDestroyed) return;
     window.clearTimeout(this.loadTimeout);
+    this.stopPlayback();
     this.videoTween?.kill();
     this.scrollTween?.kill();
     this.context?.revert();
@@ -324,6 +374,7 @@ export class OnyxScrollHero {
     this.abortController.abort();
     this.resizeRefresh.kill();
     this.wheelUnlock.kill();
+    this.stopPlayback();
     this.videoTween?.kill();
     this.scrollTween?.kill();
     this.context?.revert();
