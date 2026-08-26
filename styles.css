@@ -100,14 +100,14 @@ body{background:linear-gradient(var(--ink) 0 100vh,var(--paper) 100vh)}
 .mobile-menu-btn{color:#fff}
 
 /* GSAP-driven cinematic hero ------------------------------------------------ */
-:root{--cinematic-scroll-length:600vh}
+:root{--cinematic-scroll-length:400vh}
 .site-header{position:fixed;left:50%;top:18px;transform:translateX(-50%);margin:0;background:rgba(10,9,11,.5);border-color:rgba(255,255,255,.16);color:#fff;transition:background-color .35s ease,border-color .35s ease,color .35s ease,box-shadow .35s ease;will-change:background-color}
 .site-header.past-cinematic{background:rgba(245,241,235,.9);border-color:rgba(17,16,18,.1);color:var(--ink);box-shadow:0 10px 34px rgba(20,15,17,.1)}
 .site-header.past-cinematic .brand-copy small,.site-header.past-cinematic .desktop-nav{color:#625b5f}
 .site-header.past-cinematic .brand-mark{border-color:rgba(17,16,18,.16)}
 .site-header.past-cinematic .mobile-menu-btn{color:var(--ink)}
 .site-header.past-cinematic .header-cta{background:var(--ink);color:#fff}
-.cinematic-scroll{height:var(--cinematic-scroll-length);min-height:600vh;background:#080709;color:#fff;position:relative}
+.cinematic-scroll{height:var(--cinematic-scroll-length);min-height:400vh;background:#080709;color:#fff;position:relative}
 .cinematic-sticky{height:100vh;height:100svh;position:sticky;top:0;overflow:hidden;background:#080709;isolation:isolate}
 .cinematic-video{position:absolute;z-index:0;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;background:#080709;opacity:0;transition:opacity 1s ease;transform:translateZ(0)}
 .cinematic-video.is-ready{opacity:1}
@@ -128,7 +128,7 @@ body{background:linear-gradient(var(--ink) 0 100vh,var(--paper) 100vh)}
 .cinematic-cta:focus-visible{outline-color:#fff}
 
 @media (max-width:720px){
-  :root{--cinematic-scroll-length:500vh}
+  :root{--cinematic-scroll-length:400vh}
   .site-header{top:10px;margin:0}
   .cinematic-copy{width:calc(100% - 40px);padding:96px 0 max(34px,env(safe-area-inset-bottom))}
   .cinematic-message{top:39%;max-width:calc(100vw - 46px)}
