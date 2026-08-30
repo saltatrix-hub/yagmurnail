@@ -42,6 +42,16 @@ export async function ensureSchema(db: D1Database) {
   ]);
 }
 
+export async function ensureScheduleSchema(db: D1Database) {
+  await db.prepare(`CREATE TABLE IF NOT EXISTS schedule_slots (
+    weekday INTEGER NOT NULL CHECK (weekday BETWEEN 1 AND 7),
+    start_time TEXT NOT NULL,
+    occupied INTEGER NOT NULL DEFAULT 0 CHECK (occupied IN (0, 1)),
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (weekday, start_time)
+  )`).run();
+}
+
 export function istanbulNow() {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit', day: '2-digit',

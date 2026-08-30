@@ -19,3 +19,10 @@ export const bookingSlots = sqliteTable('booking_slots', {
   slotTime: text('slot_time').notNull(),
   bookingId: text('booking_id').notNull().references(() => bookings.id, { onDelete: 'cascade' }),
 }, (table) => [primaryKey({ columns: [table.appointmentDate, table.slotTime] })]);
+
+export const scheduleSlots = sqliteTable('schedule_slots', {
+  weekday: integer('weekday').notNull(),
+  startTime: text('start_time').notNull(),
+  occupied: integer('occupied', { mode: 'boolean' }).notNull().default(false),
+  updatedAt: text('updated_at').notNull(),
+}, (table) => [primaryKey({ columns: [table.weekday, table.startTime] })]);
