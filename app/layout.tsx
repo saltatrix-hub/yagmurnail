@@ -8,17 +8,8 @@ export const metadata: Metadata = {
     title: 'Yağmur Nail Art | Randevular',
     description: 'Haftalık programı inceleyin, boş ve dolu saatleri görün.',
     type: 'website',
-    images: [{ url: '/og.png', width: 1729, height: 910, alt: 'Yağmur Nail Art — Randevular' }]
   },
-  twitter: { card: 'summary_large_image', title: 'Yağmur Nail Art | Randevular', description: 'Haftalık programı inceleyin, boş ve dolu saatleri görün.', images: ['/og.png'] },
-  icons: {
-    icon: [
-      { url: '/favicon.ico' },
-      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-    ],
-    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
-  },
+  twitter: { card: 'summary', title: 'Yağmur Nail Art | Randevular', description: 'Haftalık programı inceleyin, boş ve dolu saatleri görün.' },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
