@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://onyx-nail-studio.saltatrix.chatgpt.site'),
+  metadataBase: new URL('https://yagmur-nail-art.saltatrix.chatgpt.site'),
   title: 'Yağmur Nail Art | Randevular',
   description: 'Yağmur Nail Art haftalık randevu programı ve müsait saatler.',
   openGraph: {
