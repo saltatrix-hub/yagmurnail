@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ensureScheduleSchema, getD1 } from '@/lib/booking';
+import { getAdminStatus } from '@/lib/admin';
 
 export async function GET() {
   try {
@@ -13,6 +14,14 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  const adminStatus = await getAdminStatus();
+  if (adminStatus !== 'authorized') {
+    return NextResponse.json(
+      { error: adminStatus === 'anonymous' ? 'Yönetici girişi gerekli.' : 'Bu işlem için yetkiniz yok.' },
+      { status: adminStatus === 'anonymous' ? 401 : 403 },
+    );
+  }
+
   let input: { day?: unknown; time?: unknown; occupied?: unknown };
   try { input = await request.json() as typeof input; } catch { return NextResponse.json({ error: 'Geçersiz istek.' }, { status: 400 }); }
   const day = Number(input.day); const time = typeof input.time === 'string' ? input.time : ''; const occupied = input.occupied; const hour = Number(time.slice(0, 2));
