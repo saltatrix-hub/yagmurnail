@@ -13,3 +13,4 @@ const oldSiteAssets = [
 
 await Promise.all(oldSiteAssets.map((path) => rm(path, { recursive: true, force: true })));
 await copyFile('videos/2.mp4', 'public/videos/2.mp4');
+await copyFile('bg.jpg', 'public/bg.jpg');

@@ -32,7 +32,6 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
-  const videoRef = useRef<HTMLVideoElement>(null);
   const starClicks = useRef(0);
   const starResetTimer = useRef<number | null>(null);
 
@@ -58,17 +57,6 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
   useEffect(() => () => {
     if (starResetTimer.current !== null) window.clearTimeout(starResetTimer.current);
   }, []);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    if (admin) {
-      video.pause();
-      video.currentTime = 0;
-    } else {
-      void video.play().catch(() => undefined);
-    }
-  }, [admin]);
 
   function openAdmin() {
     starClicks.current += 1;
@@ -124,9 +112,7 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
 
   return (
     <main className={styles.page}>
-      <video ref={videoRef} className={styles.video} autoPlay={!admin} muted loop={!admin} playsInline controls={false} disablePictureInPicture preload="auto" aria-hidden="true">
-        <source src="/videos/2.mp4" type="video/mp4" />
-      </video>
+      <div className={styles.background} aria-hidden="true" />
       <div className={styles.tint} />
       <header className={styles.header}>
         <Link href="/" className={styles.brand}>Yağmur Nail Art</Link>
