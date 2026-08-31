@@ -56,8 +56,14 @@ export async function PUT(request: NextRequest) {
     if (!Number.isInteger(day) || day < 1 || day > 7) return NextResponse.json({ error: 'Geçersiz gün bilgisi.' }, { status: 400 });
 
     if (scope === 'day') {
-      await db.batch(slotHours.map((time) => db.prepare(`INSERT INTO schedule_slots (weekday, start_time, occupied, admin_note, updated_at) VALUES (?, ?, 1, NULL, ?) ON CONFLICT(weekday, start_time) DO UPDATE SET occupied = 1, updated_at = excluded.updated_at`).bind(day, time, updatedAt)));
-      return NextResponse.json({ day, occupied: true });
+      const occupied = input.occupied;
+      if (typeof occupied !== 'boolean') return NextResponse.json({ error: 'Geçersiz gün durumu.' }, { status: 400 });
+      if (occupied) {
+        await db.batch(slotHours.map((time) => db.prepare(`INSERT INTO schedule_slots (weekday, start_time, occupied, admin_note, updated_at) VALUES (?, ?, 1, NULL, ?) ON CONFLICT(weekday, start_time) DO UPDATE SET occupied = 1, updated_at = excluded.updated_at`).bind(day, time, updatedAt)));
+      } else {
+        await db.prepare('UPDATE schedule_slots SET occupied = 0, admin_note = NULL, updated_at = ? WHERE weekday = ?').bind(updatedAt, day).run();
+      }
+      return NextResponse.json({ day, occupied });
     }
 
     const time = typeof input.time === 'string' ? input.time : '';

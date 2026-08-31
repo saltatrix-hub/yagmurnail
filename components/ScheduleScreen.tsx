@@ -111,9 +111,10 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
     if (saved) setSelectedSlot(null);
   }
 
-  async function markDayBusy(day: number) {
+  async function toggleDay(day: number) {
     if (saving) return;
-    await updateSchedule({ scope: 'day', day });
+    const wholeDayBusy = times.every((time) => busy.has(slotKey(day, time)));
+    await updateSchedule({ scope: 'day', day, occupied: !wholeDayBusy });
   }
 
   async function resetSchedule() {
@@ -151,12 +152,12 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
           </div>
         </div>
         {!admin && <p className={styles.services} aria-label="Hizmetlerimiz">{services.map((service) => <span key={service}>{service}</span>)}</p>}
-        {admin && <p className={styles.hint}>Bir saati düzenlemek için saate, tüm günü dolu yapmak için gün başlığına dokun.</p>}
+        {admin && <p className={styles.hint}>Bir saati düzenlemek için saate dokun. Gün başlığı ilk dokunuşta tüm günü dolu, ikinci dokunuşta boş yapar.</p>}
         {message && <p className={styles.message} role="status">{message}</p>}
         <div className={`${styles.schedule} ${loading ? styles.loading : ''}`} aria-busy={loading}>
-          {days.map((day) => <section className={styles.day} key={day.id} aria-label={day.name}>
+          {days.map((day) => { const wholeDayBusy = times.every((time) => busy.has(slotKey(day.id, time))); return <section className={styles.day} key={day.id} aria-label={day.name}>
             {admin
-              ? <button type="button" className={styles.dayButton} onClick={() => void markDayBusy(day.id)} disabled={saving} aria-label={`${day.name} gününün tamamını dolu yap`}><span className={styles.fullDay}>{day.name}</span><span className={styles.shortDay}>{day.short}</span></button>
+              ? <button type="button" className={`${styles.dayButton} ${wholeDayBusy ? styles.dayButtonActive : ''}`} onClick={() => void toggleDay(day.id)} disabled={saving} aria-pressed={wholeDayBusy} aria-label={`${day.name} gününün tamamını ${wholeDayBusy ? 'boş' : 'dolu'} yap`}><span className={styles.fullDay}>{day.name}</span><span className={styles.shortDay}>{day.short}</span></button>
               : <h2><span className={styles.fullDay}>{day.name}</span><span className={styles.shortDay}>{day.short}</span></h2>}
             <div className={styles.slots}>{times.map((time) => {
               const key = slotKey(day.id, time); const occupied = busy.has(key);
@@ -167,7 +168,7 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
                 ? <button type="button" key={time} className={`${className} ${note ? styles.slotWithNote : ''}`} onClick={() => editSlot(day.id, time)} disabled={saving} aria-pressed={occupied} aria-label={label}><span>{time}</span><b>{occupied ? 'DOLU' : 'BOŞ'}</b>{note && <small className={styles.slotNote}>{note}</small>}</button>
                 : <div className={className} key={time} aria-label={label}><span>{time}</span><b>{occupied ? 'DOLU' : 'BOŞ'}</b></div>;
             })}</div>
-          </section>)}
+          </section>; })}
         </div>
       </section>
       {admin && selectedSlot && <div className={styles.modalBackdrop} role="presentation">
