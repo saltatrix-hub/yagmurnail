@@ -118,13 +118,13 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
         <Link href="/" className={styles.brand}>Yağmur Nail Art</Link>
         {admin ? <>
           <strong className={styles.adminBadge}>YÖNETİCİ</strong>
-          <Link href="/" className={styles.backLink} aria-label="Normal siteye dön">← Siteye dön</Link>
+          <button type="button" className={styles.backLink} onClick={() => window.location.assign('/')} aria-label="Normal siteye dön">← Siteye dön</button>
         </> : <div className={styles.headerActions}>
           <a className={`${styles.socialButton} ${styles.whatsappButton}`} href="https://wa.me/905312937653" target="_blank" rel="noreferrer" aria-label="WhatsApp'tan iletişime geç">
-            <span className={styles.socialFull}>WhatsApp</span><span className={styles.socialShort}>WA</span>
+            <span className={styles.socialIcon} aria-hidden="true">✆</span><span className={styles.socialFull}><b>WhatsApp</b><small>Hemen yaz</small></span><span className={styles.socialShort}>WA</span>
           </a>
           <a className={`${styles.socialButton} ${styles.instagramButton}`} href="https://www.instagram.com/yagm.urnail/" target="_blank" rel="noreferrer" aria-label="Instagram'da yagm.urnail hesabını aç">
-            <span className={styles.socialFull}>Instagram</span><span className={styles.socialShort}>IG</span>
+            <span className={styles.socialIcon} aria-hidden="true">◎</span><span className={styles.socialFull}><b>Instagram</b><small>Bizi takip et</small></span><span className={styles.socialShort}>IG</span>
           </a>
           <button type="button" className={styles.starButton} onClick={openAdmin} aria-label="Yıldız">★</button>
         </div>}
