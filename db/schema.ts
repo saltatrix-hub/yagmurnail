@@ -24,5 +24,6 @@ export const scheduleSlots = sqliteTable('schedule_slots', {
   weekday: integer('weekday').notNull(),
   startTime: text('start_time').notNull(),
   occupied: integer('occupied', { mode: 'boolean' }).notNull().default(false),
+  adminNote: text('admin_note'),
   updatedAt: text('updated_at').notNull(),
 }, (table) => [primaryKey({ columns: [table.weekday, table.startTime] })]);

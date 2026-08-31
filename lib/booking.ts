@@ -47,6 +47,7 @@ export async function ensureScheduleSchema(db: D1Database) {
     weekday INTEGER NOT NULL CHECK (weekday BETWEEN 1 AND 7),
     start_time TEXT NOT NULL,
     occupied INTEGER NOT NULL DEFAULT 0 CHECK (occupied IN (0, 1)),
+    admin_note TEXT,
     updated_at TEXT NOT NULL,
     PRIMARY KEY (weekday, start_time)
   )`).run();

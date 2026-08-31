@@ -1,0 +1,1 @@
+ALTER TABLE `schedule_slots` ADD `admin_note` text;

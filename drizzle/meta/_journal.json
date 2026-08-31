@@ -15,6 +15,13 @@
       "when": 1788071134625,
       "tag": "0001_foamy_lilith",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1788201822160,
+      "tag": "0002_typical_the_hood",
+      "breakpoints": true
     }
   ]
 }

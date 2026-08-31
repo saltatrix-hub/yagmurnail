@@ -17,6 +17,10 @@ const times = Array.from({ length: 12 }, (_, index) => {
   return `${String(start).padStart(2, '0')}:00–${String(start + 1).padStart(2, '0')}:00`;
 });
 
+const services = ['Manikür', 'Pedikür', 'El & Ayak Kalıcı Oje', 'Kalıcı Oje Çıkarma', 'Nail Art', 'Kaş Bıyık Alımı', 'Komple Ağda'];
+
+type SelectedSlot = { day: number; time: string };
+
 function slotKey(day: number, time: string) { return `${day}-${time.slice(0, 5)}`; }
 
 export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
@@ -25,19 +29,23 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
+  const [noteDraft, setNoteDraft] = useState('');
   const starClicks = useRef(0);
   const starResetTimer = useRef<number | null>(null);
 
   const loadSchedule = useCallback(async () => {
     try {
-      const response = await fetch('/api/schedule', { cache: 'no-store' });
+      const response = await fetch(admin ? '/api/schedule?admin=1' : '/api/schedule', { cache: 'no-store' });
       if (!response.ok) throw new Error();
-      const data = await response.json() as { busySlots: string[] };
+      const data = await response.json() as { busySlots: string[]; notes?: Record<string, string> };
       setBusy(new Set(data.busySlots));
+      setNotes(data.notes ?? {});
       setMessage('');
     } catch { setMessage('Randevu durumu şu anda alınamıyor.'); }
     finally { setLoading(false); }
-  }, []);
+  }, [admin]);
 
   useEffect(() => {
     void loadSchedule();
@@ -61,23 +69,44 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
     starResetTimer.current = window.setTimeout(() => { starClicks.current = 0; }, 4_000);
   }
 
-  async function toggle(day: number, time: string) {
+  function editSlot(day: number, time: string) {
     if (!admin || saving) return;
     const key = slotKey(day, time);
-    const occupied = !busy.has(key);
+    setSelectedSlot({ day, time });
+    setNoteDraft(notes[key] ?? '');
+  }
+
+  async function updateSchedule(payload: Record<string, unknown>) {
     setSaving(true);
     setMessage('');
-    setBusy((current) => { const next = new Set(current); occupied ? next.add(key) : next.delete(key); return next; });
     try {
       const response = await fetch('/api/schedule', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ day, time: time.slice(0, 5), occupied }),
+        body: JSON.stringify(payload),
       });
       if (!response.ok) throw new Error();
+      await loadSchedule();
+      return true;
     } catch {
-      setBusy((current) => { const next = new Set(current); occupied ? next.delete(key) : next.add(key); return next; });
       setMessage('Değişiklik kaydedilemedi. Lütfen tekrar dene.');
+      return false;
     } finally { setSaving(false); }
+  }
+
+  async function saveSlot(occupied: boolean) {
+    if (!selectedSlot) return;
+    const saved = await updateSchedule({ scope: 'slot', day: selectedSlot.day, time: selectedSlot.time.slice(0, 5), occupied, note: occupied ? noteDraft : '' });
+    if (saved) setSelectedSlot(null);
+  }
+
+  async function markDayBusy(day: number) {
+    if (saving) return;
+    await updateSchedule({ scope: 'day', day });
+  }
+
+  async function resetSchedule() {
+    if (saving || !window.confirm('Tüm saatler boş yapılsın ve yönetici notları silinsin mi?')) return;
+    await updateSchedule({ scope: 'reset' });
   }
 
   return (
@@ -104,24 +133,44 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
       <section className={styles.content} aria-labelledby="schedule-title">
         <div className={styles.titleRow}>
           <div><p className={styles.eyebrow}>{admin ? 'YÖNETİM PANELİ' : 'HAFTALIK PROGRAM'}</p><h1 id="schedule-title">{admin ? 'Randevuları yönet' : 'Randevular'}</h1></div>
-          <div className={styles.legend} aria-label="Randevu durumları"><span><i className={styles.availableDot} />Boş</span><span><i className={styles.busyDot} />Dolu</span></div>
+          <div className={styles.titleActions}>
+            <div className={styles.legend} aria-label="Randevu durumları"><span><i className={styles.availableDot} />Boş</span><span><i className={styles.busyDot} />Dolu</span></div>
+            {admin && <button type="button" className={styles.resetButton} onClick={() => void resetSchedule()} disabled={saving}>Sıfırla</button>}
+          </div>
         </div>
-        {admin && <p className={styles.hint}>Dolu veya boş yapmak istediğin saate dokun.</p>}
+        {!admin && <p className={styles.services} aria-label="Hizmetlerimiz">{services.map((service) => <span key={service}>{service}</span>)}</p>}
+        {admin && <p className={styles.hint}>Bir saati düzenlemek için saate, tüm günü dolu yapmak için gün başlığına dokun.</p>}
         {message && <p className={styles.message} role="status">{message}</p>}
         <div className={`${styles.schedule} ${loading ? styles.loading : ''}`} aria-busy={loading}>
           {days.map((day) => <section className={styles.day} key={day.id} aria-label={day.name}>
-            <h2><span className={styles.fullDay}>{day.name}</span><span className={styles.shortDay}>{day.short}</span></h2>
+            {admin
+              ? <button type="button" className={styles.dayButton} onClick={() => void markDayBusy(day.id)} disabled={saving} aria-label={`${day.name} gününün tamamını dolu yap`}><span className={styles.fullDay}>{day.name}</span><span className={styles.shortDay}>{day.short}</span></button>
+              : <h2><span className={styles.fullDay}>{day.name}</span><span className={styles.shortDay}>{day.short}</span></h2>}
             <div className={styles.slots}>{times.map((time) => {
               const key = slotKey(day.id, time); const occupied = busy.has(key);
               const className = `${styles.slot} ${occupied ? styles.busy : styles.available}`;
-              const label = `${day.name} ${time}, ${occupied ? 'dolu' : 'boş'}`;
+              const note = notes[key];
+              const label = `${day.name} ${time}, ${occupied ? 'dolu' : 'boş'}${note ? `, not: ${note}` : ''}`;
               return admin
-                ? <button type="button" key={time} className={className} onClick={() => void toggle(day.id, time)} disabled={saving} aria-pressed={occupied} aria-label={label}><span>{time}</span><b>{occupied ? 'DOLU' : 'BOŞ'}</b></button>
+                ? <button type="button" key={time} className={`${className} ${note ? styles.slotWithNote : ''}`} onClick={() => editSlot(day.id, time)} disabled={saving} aria-pressed={occupied} aria-label={label}><span>{time}</span><b>{occupied ? 'DOLU' : 'BOŞ'}</b>{note && <small className={styles.slotNote}>{note}</small>}</button>
                 : <div className={className} key={time} aria-label={label}><span>{time}</span><b>{occupied ? 'DOLU' : 'BOŞ'}</b></div>;
             })}</div>
           </section>)}
         </div>
       </section>
+      {admin && selectedSlot && <div className={styles.modalBackdrop} role="presentation">
+        <form className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="note-title" onSubmit={(event) => { event.preventDefault(); void saveSlot(true); }}>
+          <button type="button" className={styles.modalClose} onClick={() => setSelectedSlot(null)} aria-label="Pencereyi kapat">×</button>
+          <p className={styles.modalEyebrow}>{days.find((day) => day.id === selectedSlot.day)?.name} · {selectedSlot.time}</p>
+          <h2 id="note-title">Yönetici notu</h2>
+          <label htmlFor="admin-note">İsim veya not</label>
+          <input id="admin-note" value={noteDraft} onChange={(event) => setNoteDraft(event.target.value)} maxLength={120} placeholder="Örn. Hayriye Kozdere" autoFocus />
+          <div className={styles.modalActions}>
+            <button type="button" className={styles.makeAvailableButton} onClick={() => void saveSlot(false)} disabled={saving}>Boş yap</button>
+            <button type="submit" className={styles.saveBusyButton} disabled={saving}>Dolu olarak kaydet</button>
+          </div>
+        </form>
+      </div>}
     </main>
   );
 }
