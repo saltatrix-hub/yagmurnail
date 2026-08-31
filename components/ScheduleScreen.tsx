@@ -91,7 +91,15 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
         {admin ? <>
           <strong className={styles.adminBadge}>YÖNETİCİ</strong>
           <Link href="/" className={styles.backLink} aria-label="Normal siteye dön">← Geri</Link>
-        </> : <button type="button" className={styles.starButton} onClick={openAdmin} aria-label="Yıldız">★</button>}
+        </> : <div className={styles.headerActions}>
+          <a className={`${styles.socialButton} ${styles.whatsappButton}`} href="https://wa.me/905312937653" target="_blank" rel="noreferrer" aria-label="WhatsApp'tan iletişime geç">
+            <span className={styles.socialFull}>WhatsApp</span><span className={styles.socialShort}>WA</span>
+          </a>
+          <a className={`${styles.socialButton} ${styles.instagramButton}`} href="https://www.instagram.com/yagm.urnail/" target="_blank" rel="noreferrer" aria-label="Instagram'da yagm.urnail hesabını aç">
+            <span className={styles.socialFull}>Instagram</span><span className={styles.socialShort}>IG</span>
+          </a>
+          <button type="button" className={styles.starButton} onClick={openAdmin} aria-label="Yıldız">★</button>
+        </div>}
       </header>
       <section className={styles.content} aria-labelledby="schedule-title">
         <div className={styles.titleRow}>
