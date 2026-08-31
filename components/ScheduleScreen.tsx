@@ -123,7 +123,7 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
 
   return (
     <main className={styles.page}>
-      <video ref={videoRef} className={styles.video} autoPlay={!admin} muted loop={!admin} playsInline preload="auto" aria-hidden="true">
+      <video ref={videoRef} className={styles.video} autoPlay={!admin} muted loop={!admin} playsInline controls={false} disablePictureInPicture preload="auto" aria-hidden="true">
         <source src="/videos/2.mp4" type="video/mp4" />
       </video>
       <div className={styles.tint} />
