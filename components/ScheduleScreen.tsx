@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './schedule.module.css';
 
 const days = [
@@ -19,10 +20,13 @@ const times = Array.from({ length: 12 }, (_, index) => {
 function slotKey(day: number, time: string) { return `${day}-${time.slice(0, 5)}`; }
 
 export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
+  const router = useRouter();
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const starClicks = useRef(0);
+  const starResetTimer = useRef<number | null>(null);
 
   const loadSchedule = useCallback(async () => {
     try {
@@ -41,6 +45,21 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
     const interval = window.setInterval(() => void loadSchedule(), 15_000);
     return () => window.clearInterval(interval);
   }, [admin, loadSchedule]);
+
+  useEffect(() => () => {
+    if (starResetTimer.current !== null) window.clearTimeout(starResetTimer.current);
+  }, []);
+
+  function openAdmin() {
+    starClicks.current += 1;
+    if (starResetTimer.current !== null) window.clearTimeout(starResetTimer.current);
+    if (starClicks.current >= 5) {
+      starClicks.current = 0;
+      router.push('/admin');
+      return;
+    }
+    starResetTimer.current = window.setTimeout(() => { starClicks.current = 0; }, 4_000);
+  }
 
   async function toggle(day: number, time: string) {
     if (!admin || saving) return;
@@ -69,7 +88,10 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
       <div className={styles.tint} />
       <header className={styles.header}>
         <Link href="/" className={styles.brand}>Yağmur Nail Art</Link>
-        <Link href={admin ? '/' : '/admin'} className={styles.adminLink}>{admin ? 'Siteye dön' : 'Admin'}</Link>
+        {admin ? <>
+          <strong className={styles.adminBadge}>YÖNETİCİ</strong>
+          <Link href="/" className={styles.backLink} aria-label="Normal siteye dön">← Geri</Link>
+        </> : <button type="button" className={styles.starButton} onClick={openAdmin} aria-label="Yıldız">★</button>}
       </header>
       <section className={styles.content} aria-labelledby="schedule-title">
         <div className={styles.titleRow}>
