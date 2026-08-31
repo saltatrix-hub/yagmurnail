@@ -32,6 +32,7 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
+  const videoRef = useRef<HTMLVideoElement>(null);
   const starClicks = useRef(0);
   const starResetTimer = useRef<number | null>(null);
 
@@ -57,6 +58,17 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
   useEffect(() => () => {
     if (starResetTimer.current !== null) window.clearTimeout(starResetTimer.current);
   }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (admin) {
+      video.pause();
+      video.currentTime = 0;
+    } else {
+      void video.play().catch(() => undefined);
+    }
+  }, [admin]);
 
   function openAdmin() {
     starClicks.current += 1;
@@ -111,7 +123,7 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
 
   return (
     <main className={styles.page}>
-      <video className={styles.video} autoPlay muted loop playsInline preload="auto" aria-hidden="true">
+      <video ref={videoRef} className={styles.video} autoPlay={!admin} muted loop={!admin} playsInline preload="auto" aria-hidden="true">
         <source src="/videos/2.mp4" type="video/mp4" />
       </video>
       <div className={styles.tint} />
@@ -119,7 +131,7 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
         <Link href="/" className={styles.brand}>Yağmur Nail Art</Link>
         {admin ? <>
           <strong className={styles.adminBadge}>YÖNETİCİ</strong>
-          <Link href="/" className={styles.backLink} aria-label="Normal siteye dön">← Geri</Link>
+          <Link href="/" className={styles.backLink} aria-label="Normal siteye dön">← Siteye dön</Link>
         </> : <div className={styles.headerActions}>
           <a className={`${styles.socialButton} ${styles.whatsappButton}`} href="https://wa.me/905312937653" target="_blank" rel="noreferrer" aria-label="WhatsApp'tan iletişime geç">
             <span className={styles.socialFull}>WhatsApp</span><span className={styles.socialShort}>WA</span>
