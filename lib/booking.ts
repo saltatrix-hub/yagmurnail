@@ -43,14 +43,24 @@ export async function ensureSchema(db: D1Database) {
 }
 
 export async function ensureScheduleSchema(db: D1Database) {
-  await db.prepare(`CREATE TABLE IF NOT EXISTS schedule_slots (
-    weekday INTEGER NOT NULL CHECK (weekday BETWEEN 1 AND 7),
-    start_time TEXT NOT NULL,
-    occupied INTEGER NOT NULL DEFAULT 0 CHECK (occupied IN (0, 1)),
-    admin_note TEXT,
-    updated_at TEXT NOT NULL,
-    PRIMARY KEY (weekday, start_time)
-  )`).run();
+  await db.batch([
+    db.prepare(`CREATE TABLE IF NOT EXISTS hairdressers (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      category TEXT NOT NULL CHECK (category IN ('male', 'female')),
+      active INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0, 1)),
+      created_at TEXT NOT NULL
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS schedule_slots (
+      hairdresser_id TEXT NOT NULL REFERENCES hairdressers(id),
+      weekday INTEGER NOT NULL CHECK (weekday BETWEEN 1 AND 7),
+      start_time TEXT NOT NULL,
+      occupied INTEGER NOT NULL DEFAULT 0 CHECK (occupied IN (0, 1)),
+      admin_note TEXT,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (hairdresser_id, weekday, start_time)
+    )`),
+  ]);
 }
 
 export function istanbulNow() {

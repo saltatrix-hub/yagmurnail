@@ -1,5 +1,5 @@
-import ScheduleScreen from '@/components/ScheduleScreen';
+import EntranceScreen from '@/components/EntranceScreen';
 
 export default function Home() {
-  return <ScheduleScreen />;
+  return <EntranceScreen />;
 }

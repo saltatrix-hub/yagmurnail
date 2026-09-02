@@ -17,13 +17,18 @@ const times = Array.from({ length: 12 }, (_, index) => {
   return `${String(start).padStart(2, '0')}:00–${String(start + 1).padStart(2, '0')}:00`;
 });
 
-const services = ['Manikür', 'Pedikür', 'El & Ayak Kalıcı Oje', 'Kalıcı Oje Çıkarma', 'Nail Art', 'Kaş Bıyık Alımı', 'Komple Ağda'];
+const services = ['Saç kesimi', 'Fön', 'Saç boyama', 'Bakım', 'Şekillendirme'];
 
 type SelectedSlot = { day: number; time: string };
 
 function slotKey(day: number, time: string) { return `${day}-${time.slice(0, 5)}`; }
 
-export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
+interface ScheduleScreenProps {
+  admin?: boolean;
+  hairdresserId?: string;
+}
+
+export default function ScheduleScreen({ admin = false, hairdresserId }: ScheduleScreenProps) {
   const router = useRouter();
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -32,20 +37,26 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
+  const [hairdresserName, setHairdresserName] = useState<string>('');
   const starClicks = useRef(0);
   const starResetTimer = useRef<number | null>(null);
 
   const loadSchedule = useCallback(async () => {
     try {
-      const response = await fetch(admin ? '/api/schedule?admin=1' : '/api/schedule', { cache: 'no-store' });
+      const params = new URLSearchParams();
+      if (admin) params.append('admin', '1');
+      if (hairdresserId) params.append('hairdresserId', hairdresserId);
+      const url = `/api/schedule?${params.toString()}`;
+      const response = await fetch(url, { cache: 'no-store' });
       if (!response.ok) throw new Error();
-      const data = await response.json() as { busySlots: string[]; notes?: Record<string, string> };
+      const data = await response.json() as { busySlots: string[]; notes?: Record<string, string>; hairdresserName?: string };
       setBusy(new Set(data.busySlots));
       setNotes(data.notes ?? {});
+      if (data.hairdresserName) setHairdresserName(data.hairdresserName);
       setMessage('');
     } catch { setMessage('Randevu durumu şu anda alınamıyor.'); }
     finally { setLoading(false); }
-  }, [admin]);
+  }, [admin, hairdresserId]);
 
   useEffect(() => {
     void loadSchedule();
@@ -80,9 +91,13 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
     setSaving(true);
     setMessage('');
     try {
+      const body = { ...payload };
+      if (hairdresserId) {
+        body.hairdresserId = hairdresserId;
+      }
       const response = await fetch('/api/schedule', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(body),
       });
       if (!response.ok) throw new Error();
       await loadSchedule();
@@ -115,11 +130,18 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
       <div className={styles.background} aria-hidden="true" />
       <div className={styles.tint} />
       <header className={styles.header}>
-        <Link href="/" className={styles.brand}>Yağmur Nail Art</Link>
+        {hairdresserId ? (
+          <>
+            <button type="button" className={styles.backLink} onClick={() => router.push(admin ? '/admin' : '/')} aria-label="Geri dön">← {admin ? 'Kuaförler' : 'Geri'}</button>
+            <h1 className={styles.hairdresserTitle}>{hairdresserName || 'Kuaför'}</h1>
+          </>
+        ) : (
+          <Link href="/" className={styles.brand}>Randevu Programı</Link>
+        )}
         {admin ? <>
           <strong className={styles.adminBadge}>YÖNETİCİ</strong>
           <button type="button" className={styles.backLink} onClick={() => window.location.assign('/')} aria-label="Normal siteye dön">← Siteye dön</button>
-        </> : <div className={styles.headerActions}>
+        </> : !hairdresserId && <div className={styles.headerActions}>
           <a className={`${styles.socialButton} ${styles.whatsappButton}`} href="https://wa.me/905312937653" target="_blank" rel="noreferrer" aria-label="WhatsApp'tan iletişime geç">
             <span className={styles.socialIcon} aria-hidden="true">✆</span><span className={styles.socialFull}><b>WhatsApp</b><small>Hemen yaz</small></span><span className={styles.socialShort}>WA</span>
           </a>
@@ -131,7 +153,7 @@ export default function ScheduleScreen({ admin = false }: { admin?: boolean }) {
       </header>
       <section className={styles.content} aria-labelledby="schedule-title">
         <div className={styles.titleRow}>
-          <div><p className={styles.eyebrow}>{admin ? 'YÖNETİM PANELİ' : 'HAFTALIK PROGRAM'}</p><h1 id="schedule-title">{admin ? 'Randevuları yönet' : 'Randevular'}</h1></div>
+          <div><p className={styles.eyebrow}>{admin ? 'YÖNETİM PANELİ' : 'PAZARTESİ–PAZAR'}</p><h1 id="schedule-title">{admin ? 'Saatleri yönet' : 'Haftalık program'}</h1></div>
           <div className={styles.titleActions}>
             <div className={styles.legend} aria-label="Randevu durumları"><span><i className={styles.availableDot} />Boş</span><span><i className={styles.busyDot} />Dolu</span></div>
             {admin && <button type="button" className={styles.resetButton} onClick={() => void resetSchedule()} disabled={saving}>Sıfırla</button>}

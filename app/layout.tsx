@@ -1,17 +1,16 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://yagmur-nail-art.saltatrix.chatgpt.site'),
-  title: 'Yağmur Nail Art | Randevular',
-  description: 'Yağmur Nail Art haftalık randevu programı ve müsait saatler.',
+  title: 'Kuaför Randevuları',
+  description: 'Kadın ve erkek kuaförleri için haftalık randevu programı.',
   openGraph: {
-    title: 'Yağmur Nail Art | Randevular',
-    description: 'Haftalık programı inceleyin, boş ve dolu saatleri görün.',
+    title: 'Kuaför Randevuları',
+    description: 'Kuaförünüzü seçin; Pazartesi–Pazar programını inceleyin.',
     type: 'website',
   },
-  twitter: { card: 'summary', title: 'Yağmur Nail Art | Randevular', description: 'Haftalık programı inceleyin, boş ve dolu saatleri görün.' },
+  twitter: { card: 'summary', title: 'Kuaför Randevuları', description: 'Kuaförünüzü seçin ve haftalık programı görün.' },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="tr"><body style={{ margin: 0, overflow: 'hidden' }}>{children}</body></html>;
+  return <html lang="tr"><body style={{ margin: 0 }}>{children}</body></html>;
 }
