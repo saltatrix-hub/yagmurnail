@@ -1,4 +1,4 @@
-CREATE TABLE `hairdressers` (
+CREATE TABLE IF NOT EXISTS `hairdressers` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`category` text NOT NULL,
@@ -6,7 +6,7 @@ CREATE TABLE `hairdressers` (
 	`created_at` text NOT NULL
 );
 --> statement-breakpoint
-INSERT INTO `hairdressers` (`id`, `name`, `category`, `active`, `created_at`) VALUES ('legacy-yagmur', 'Yağmur', 'female', 1, CURRENT_TIMESTAMP);
+INSERT OR IGNORE INTO `hairdressers` (`id`, `name`, `category`, `active`, `created_at`) VALUES ('legacy-yagmur', 'Yağmur', 'female', 1, CURRENT_TIMESTAMP);
 --> statement-breakpoint
 PRAGMA foreign_keys=OFF;--> statement-breakpoint
 CREATE TABLE `__new_schedule_slots` (
